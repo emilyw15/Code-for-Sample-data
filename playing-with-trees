@@ -1,0 +1,53 @@
+from sklearn.linear_model import LogisticRegression
+from sklearn.cross_validation import KFold
+from sklearn.ensemble import RandomForestClassifier
+from sklearn import tree
+from sklearn.tree import DecisionTreeClassifier, export_graphviz
+from sklearn import metrics
+import pandas as pd
+import numpy as np
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+# import the data from the excel file
+a = pd.read_excel('~/Documents/MQP/student/student-mat.xlsx')
+# we chose to use a Classification Decision Tree for our model 
+model = tree.DecisionTreeClassifier()
+def class_model(model, data, predictors, outcome):
+    # grow a tree using our chosen predictors and outcome from our data
+    model.fit(data[predictors],data[outcome])
+    # have the model predict the values (or class) of our predictors
+    predictions = model.predict(data[predictors])
+    # calculate an accuracy score of the model which is the count of correct predictions
+    accuracy = metrics.accuracy_score(predictions, data[outcome])
+    # print out the accuracy score to screen
+    print("Accuracy: %s" % "{0:.3%}".format(accuracy))
+    # Split the dataset into k-folds, then use each fold as the validation set
+    # while using the other k-1 folds as the training set
+    kf = KFold(data.shape[0], n_folds=5)
+    # initialize an array to keep track of the error of each data point
+    error = []
+    for train, test in kf:
+        # calculate the training predictors
+        train_predictors = (data[predictors],iloc[train,:])
+        # calculate the training outcomes
+        train_target = data[outcome].iloc[train]
+        # rebuild the decision tree based on the training data
+        model.fit(train_predictors, train_target)
+        # calculate the error (mean accuracy error)
+        error.append(model.score(data[predictors].iloc[test,:], data[outcome].iloc[test]))
+    # print the error (CV score) to screen
+    print("Cross-validation Score: %s" % "{0:.3%}".format(np.mean(error)))
+    # rebuild the decision tree again using the actual predictors/outcomes from our actual data set
+    model.fit(data[predictors],data[outcome])
+# choosing 'age' and 'studytime' as our predictors
+predict1 = pd.DataFrame(a,columns=['age','studytime'])
+X = np.matrix(predict1)
+print(X)
+# choosing 'sex' as our outcome
+outcome1 = pd.DataFrame(a,columns=['sex'])
+Y = np.zeros([len(outcome1)])
+for i in range(len(outcome1)):
+    if outcome1['sex'][i] == 'M':
+        Y[i] = 1
+print(Y)
+mc1 = class_model(model, a, X, Y)
