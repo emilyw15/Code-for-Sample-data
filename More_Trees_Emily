@@ -1,0 +1,84 @@
+from sklearn.linear_model import LogisticRegression
+from sklearn.cross_validation import KFold
+from sklearn.ensemble import RandomForestClassifier
+from sklearn import tree
+from sklearn.tree import DecisionTreeClassifier, export_graphviz
+from sklearn import metrics
+import pandas as pd
+import numpy as np
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+# import the data from the excel file
+a = pd.read_excel('Clean Data.xlsx')
+
+#Encoding Data
+sex = {'M': 0, 'F': 1}
+a['sex'] = a.sex.map(sex)
+
+school = {'GP': 0, 'MS': 1}
+a['school'] = a.school.map(school)
+
+pstatus = {'A': 0, 'T': 1}
+a['Pstatus'] = a.Pstatus.map(pstatus)
+
+reason = {'home': 0, 'reputation': 1, 'course': 2, 'other': 3}
+a['reason'] = a.reason.map(reason)
+
+schoolsup = {'no': 0, 'yes': 1}
+a['schoolsup'] = a.schoolsup.map(schoolsup)
+
+paid = {'no': 0, 'yes': 1}
+a['paid'] = a.paid.map(paid)
+
+activity = {'no': 0, 'yes': 1}
+a['activities'] = a.activities.map(activity)
+
+internet ={'no': 0, 'yes': 1}
+a['internet'] = a.internet.map(internet)
+
+ #we chose to use a Classification Decision Tree for our model 
+model = tree.DecisionTreeClassifier()
+def class_model(model, data, predictors, outcome):
+    # grow a tree using our chosen predictors and outcome from our data
+    model.fit(data[predictors],data[outcome])
+    # have the model predict the values (or class) of our predictors
+    predictions = model.predict(data[predictors])
+    # calculate an accuracy score of the model which is the count of correct predictions
+    accuracy = metrics.accuracy_score(predictions, data[outcome])
+    # print out the accuracy score to screen
+    print("Accuracy: %s" % "{0:.3%}".format(accuracy))
+    # Split the dataset into k-folds, then use each fold as the validation set
+    # while using the other k-1 folds as the training set
+    kf = KFold(10, n_folds=5)
+    # initialize an array to keep track of the error of each data point
+    error = []
+    for train, test in kf:
+        # calculate the training and testing predictors
+        train_predictors,test_predictors = predictors[train], predictors[test]
+
+        # calculate the training and testing outcomes
+        train_target, test_target = outcome[train], outcome[test]
+        # rebuild the decision tree based on the training data
+        model.fit(train_predictors, train_target)
+        # Predict on Testing Data
+        pred = model.predict(test_predictors)
+        # calculate the error (mean accuracy error)
+        error.append(model.score(pred, test_target))
+    # print the error (CV score) to screen
+    print("Cross-validation Score: %s" % "{0:.3%}".format(np.mean(error)))
+    # rebuild the decision tree again using the actual predictors/outcomes from our actual data set
+    model.fit(data[predictors],data[outcome])
+    
+#choosing 'age' and 'studytime' as our predictors
+x1 = pd.DataFrame(a,columns=['age'])
+x2 = pd.DataFrame(a,columns=['age','studytime'])
+
+
+
+# choosing 'sex' as our outcome
+Y = pd.DataFrame(a,columns=['G3'])
+
+x1 = x1.values
+x2 = x2.values
+Y = Y.values
+mc1 = class_model(model, a, x2, Y)
